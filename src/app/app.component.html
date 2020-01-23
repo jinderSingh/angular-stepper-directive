@@ -1,11 +1,11 @@
 
-<div class="stepper" stepper>
+<div class="stepper" stepper [linear]="true">
 
   <h4>
     Stepper app
   </h4>
 
-  <home *step></home>
+  <home *step="let step with formGroup.get('home')"></home>
   <about *step></about>
 
 

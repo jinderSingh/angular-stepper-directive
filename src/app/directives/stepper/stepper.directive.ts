@@ -1,22 +1,38 @@
 import { Directive, ElementRef, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
-import { StepDirective } from './step/step.directive';
+import { StepChangeEvent } from './models/step-change.event';
+import { StepRef } from './models/step-ref';
 
 @Directive({
     selector: '[stepper]'
 })
 export class StepperDirective implements OnDestroy {
 
+    @Output() selectedIndexChange: EventEmitter<StepChangeEvent> = new EventEmitter();
+
+    @Input() linear: boolean;
+
+    @Input() editable: boolean;
 
     @Input()
     set selectedIndex(val: number) {
         if (!this.isSelectable(val) || val === this.selectedIndex) {
             return;
         }
+
         if (this.selected) {
+
+            if (this.linear && !this.selected.isValid()) {
+                return;
+            }
             this.selected.clear();
         }
+
+        const prevIndex = this.selectedIndex;
+
         this.internalSelectedIndex = val;
         this.selected.create();
+
+        this.selectedIndexChange.emit({index: val, prevIndex});
     }
 
     get selectedIndex(): number {
@@ -27,21 +43,19 @@ export class StepperDirective implements OnDestroy {
         return (this.steps && this.steps.length) - 1;
     }
 
-    get isEmpty(): boolean {
+    get isStepsArrayEmpty(): boolean {
         return !this.steps || !this.steps.length;
     }
 
-    get selected(): StepDirective {
+    get selected(): StepRef {
         return this.steps && this.steps[this.selectedIndex] || undefined;
     }
 
-    @Output() selectedIndexChange: EventEmitter<any> = new EventEmitter();
-
-    private steps: StepDirective[];
+    private steps: StepRef[];
     private internalSelectedIndex;
     private isAlive = true;
 
-    constructor(private tmp: ElementRef<any>) {
+    constructor(private tmpl: ElementRef<any>) {
     }
 
 
@@ -50,7 +64,7 @@ export class StepperDirective implements OnDestroy {
     }
 
 
-    add(step: StepDirective): void {
+    add(step: StepRef): void {
         if (!step) {
             return;
         }
@@ -80,7 +94,7 @@ export class StepperDirective implements OnDestroy {
     }
 
     private isSelectable(index: number): boolean {
-        return !this.isEmpty && index <= this.stepsLength && index >= 0 ;
+        return !this.isStepsArrayEmpty && index <= this.stepsLength && index >= 0 ;
     }
 
 }
